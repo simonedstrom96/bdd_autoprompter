@@ -5,7 +5,7 @@ document.getElementById("generatePoem")?.addEventListener("click", async () => {
 
   try {
     
-    const response = await fetch("http://localhost:3000/generate-poem", {
+    const response = await fetch("http://localhost:8080/generate-poem", {
       method: "POST",
       headers: {
       "Content-Type": "application/json",
