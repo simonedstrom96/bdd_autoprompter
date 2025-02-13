@@ -1,3 +1,7 @@
+import * as fs from "fs";
+import * as readline from "readline";
+import { parseBddSpecs, BDDScenario, BDDSpecification } from "./parseBddSpecs";
+
 type Persona = {
   positive: boolean; // if the persona is a positive or a negative persona. A positive persona uses the system as intended and belongs to some group. A negative persona is attempting to misuse the system as its primary purpose.
   description: string;
@@ -46,24 +50,6 @@ type ApplicationInteractionFlow = {
   teardown: () => any;
 };
 
-type BDDScenario = {
-  threshold: number;
-  description: string;
-  content: string[];
-  validationResultDescription?: string;
-  validationScoringResult?: number;
-};
-
-// BDD file in a structured format
-type BDDSpecification = {
-  features: {
-    description: string;
-    llmBehaviourFeature: boolean; // does the feature describe LLM behavior or not indicated by beggining the feature description with [LLM behavior]
-    background: string;
-    scenarios: BDDScenario[];
-  }[];
-};
-
 interface PromptParams {
   name: string;
   content: string;
@@ -89,7 +75,6 @@ export function bddapGetPrompt(input: PromptParams): string {
 }
 
 export class BDDAutoprompter {
-
   private applicationOverview: string;
   private relevantBddFilePaths: string[] | string;
   private envFilePath: string;
@@ -99,6 +84,7 @@ export class BDDAutoprompter {
   private applicationLangfuseConfig?: LangfuseConfig;
   private autoPrompterLangfuseConfig?: LangfuseConfig;
   private additionalBddAutoPrompterConfig?: AdditionalBddAutoPrompterConfig;
+  private bddSpecifications: BDDSpecification[] = [];
 
   constructor(props: BDDAutoPrompterParams) {
     this.applicationOverview = props.applicationOverview;
@@ -109,7 +95,18 @@ export class BDDAutoprompter {
     this.keyTermsAndDefinitions = props.keyTermsAndDefinitions;
     this.applicationLangfuseConfig = props.applicationLangfuseConfig;
     this.autoPrompterLangfuseConfig = props.autoPrompterLangfuseConfig;
-    this.additionalBddAutoPrompterConfig = props.additionalBddAutoPrompterConfig;
+    this.additionalBddAutoPrompterConfig =
+      props.additionalBddAutoPrompterConfig;
+  }
+
+  public static async initialise(
+    params: BDDAutoPrompterParams
+  ): Promise<BDDAutoprompter> {
+    const bddAutoPrompter = new BDDAutoprompter(params);
+    bddAutoPrompter.bddSpecifications = await parseBddSpecs(
+      bddAutoPrompter.relevantBddFilePaths
+    );
+    return bddAutoPrompter;
   }
 
   public async simulateConversation(
@@ -117,23 +114,26 @@ export class BDDAutoprompter {
     personas: Persona[]
   ) {}
 
-  //   public async artifactMaxPooling(artifacts: Artifact[]): Artifact[] {}
+  public async fetchArtifactContent(artifact: Artifact) {
+    // store artifact content before passing it on, to be used in report
+    return artifact.getArtifact();
+  }
 
-  private async parseBddSpecs(
-    bddSpecFilePaths: string[]
-  ): Promise<BDDSpecification[]> {}
+  // public async artifactMaxPooling(artifacts: Artifact[]): Artifact[] {}
 
-  private async generatePersonas(conversation: Conversation) {}
+  // private async generatePersonas(conversation: Conversation) {}
 
-  private async performAutoPromptingValidation(
-    interactionFlows: ApplicationInteractionFlow[]
-  ): Promise<AutoPromptValidationReport> {}
+  // private async performAutoPromptingValidation(
+  //   interactionFlows: ApplicationInteractionFlow[]
+  // ): Promise<AutoPromptValidationReport> {}
 
-  private async performAutoPromptingImprovement(
-    report: AutoPromptValidationReport
-  ): Promise<PromptParams> {}
+  // private async performAutoPromptingImprovement(
+  //   report: AutoPromptValidationReport
+  // ): Promise<PromptParams> {}
 
-  private async autoPromptingLoop(){}
+  private async autoPromptingLoop() {}
 
-  private async updateApplicationLangfusePrompts(promptsToUpdate:PromptParams[]){}
+  private async updateApplicationLangfusePrompts(
+    promptsToUpdate: PromptParams[]
+  ) {}
 }
