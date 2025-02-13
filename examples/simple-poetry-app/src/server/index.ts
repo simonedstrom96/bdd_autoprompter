@@ -4,7 +4,7 @@ import express, { Request, Response } from "express";
 import cors from "cors";
 import { SystemMessage } from "@langchain/core/messages";
 import { LLMService } from "../../../shared/server/llmService";
-import { getPrompt } from "bdd-autoprompter";
+import { bddapGetPrompt } from "bdd-autoprompter";
 
 const app = express();
 const port = 8080;
@@ -14,9 +14,14 @@ app.use(cors());
 const llmService = new LLMService({ temperature: 1 });
 
 async function handleGeneratePoem(): Promise<string> {
-  const promptContent = "Generate a poem, no other text";
-  const prompt = getPrompt(promptContent);
-  const langchainMessages = [new SystemMessage(prompt)];
+  const initialPromptContent = "Generate a poem, no other text";
+  const bddapPromptFields = {
+    content: initialPromptContent,
+    name: "Poem instruction prompt",
+    description: "The prompt that instructs the LLM how to form the poem",
+  };
+  const promptContent = bddapGetPrompt(bddapPromptFields);
+  const langchainMessages = [new SystemMessage(promptContent)];
   const llmResponse = await llmService.invoke(langchainMessages);
   return llmResponse;
 }

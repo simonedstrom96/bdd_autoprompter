@@ -6,6 +6,6 @@
   "scripts": {
     "dev": "concurrently \"npm run start:backend\" \"npm run start:frontend\"",
     "start:backend": "npx ts-node src/server/index.ts",
-    "start:frontend": "live-server src/app --port=3000"
+    "start:frontend": "live-server src/app --port=3000 --no-browser"
   }
 }
