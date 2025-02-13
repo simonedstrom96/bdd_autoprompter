@@ -1,0 +1,14 @@
+*.js
+!*.config.js
+*.d.ts
+node_modules
+
+*/**/dist
+dist
+
+*.env
+
+.vscode/*
+
+# Mac file stuff
+.DS_Store

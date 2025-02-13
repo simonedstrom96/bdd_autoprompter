@@ -1,0 +1,19 @@
+{
+  "name": "bdd_autoprompter",
+  "version": "1.0.0",
+  "description": "Automatically verify and improve LLM based application using BDD specifications",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "npx ts-node src/index.ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "Simon Edström",
+  "license": "MIT",
+  "devDependencies": {
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.3"
+  }
+}
