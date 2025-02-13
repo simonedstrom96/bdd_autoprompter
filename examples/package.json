@@ -1,0 +1,26 @@
+{
+  "name": "bdd-autoprompter-examples",
+  "private": true,
+  "author": "Simon Edström",
+  "license": "MIT",
+  "workspaces": [
+    "examples/*"
+  ],
+  "scripts": {
+    "build": "tsc -b examples/*",
+    "start:app1": "cd ./simple-poetry-app && npm run dev"
+  },
+  "dependencies": {
+    "@langchain/core": "^0.3.40",
+    "@langchain/openai": "^0.4.4",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.19.2"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "concurrently": "^9.1.2",
+    "live-server": "^1.2.2"
+  }
+}

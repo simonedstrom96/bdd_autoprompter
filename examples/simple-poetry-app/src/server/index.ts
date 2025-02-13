@@ -1,10 +1,9 @@
 import * as dotenv from "dotenv";
-dotenv.config({ path: __dirname + "/.env" });
+dotenv.config({ path: __dirname + "/../../../shared/server/.env" });
 import express, { Request, Response } from "express";
 import cors from "cors";
-
 import { SystemMessage } from "@langchain/core/messages";
-import { LLMService } from "./llmService";
+import { LLMService } from "../../../shared/server/llmService";
 
 const app = express();
 const port = 3000;
@@ -26,7 +25,9 @@ app.post("/generate-poem", async (req: Request, res: Response) => {
     const poem = await handleGeneratePoem();
     res.status(200).json({ poem });
   } catch (error) {
-    res.status(500).json({ error: (error as Error).message });
+    const errorMessage = (error as Error).message;
+    console.log(errorMessage);
+    res.status(500).json({ error: errorMessage });
   }
 });
 

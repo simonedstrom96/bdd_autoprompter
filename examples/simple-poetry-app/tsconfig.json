@@ -1,18 +1,7 @@
 {
+  "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "target": "ES6",
-    "module": "commonjs",
-    "outDir": "./dist",
-    "strict": true,
-    "esModuleInterop": true,
-    "noErrorTruncation": true
+    "outDir": "dist"
   },
-  
-  "include": [
-    "src/**/*.ts",
-    "**/*.test.ts", "src/app/index.js",
-  ],
-  "exclude": [
-    "node_modules",
-  ]
+  "include": ["src/**/*.ts", "../shared/server/llmService.ts"]
 }
