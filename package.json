@@ -1,12 +1,12 @@
 {
-  "name": "bdd_autoprompter",
+  "name": "bdd-autoprompter",
   "version": "1.0.0",
   "description": "Automatically verify and improve LLM based application using BDD specifications",
-  "main": "index.js",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc",
-    "start": "node dist/index.js",
-    "dev": "npx ts-node src/index.ts",
+    "dev1": "cd examples && npm i && npm run start:app1",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -19,5 +19,8 @@
   "devDependencies": {
     "ts-node": "^10.9.2",
     "typescript": "^5.7.3"
-  }
+  },
+  "files": [
+    "dist"
+  ]
 }
