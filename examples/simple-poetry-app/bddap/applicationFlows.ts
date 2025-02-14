@@ -21,10 +21,12 @@ const simplePoetryApplicationFlowProps: ApplicationInteractionFlowProps = {
     const bddAutoPrompter = await BDDAutoPrompter.initialise(
       autoPrompterParams
     );
-    const poemContent = await bddAutoPrompter.fetchArtifactContent(
-      poemArtifact
+    const virtualInputs = Array.from({ length: 10 }, (_, i) => i + 1); // generate a list of 10 numbers to generate 10 random poems. Should be made more general later.
+    const poemArtifacts = await bddAutoPrompter.generateArtifacts(
+      poemArtifact,
+      virtualInputs
     );
-    return bddAutoPrompter;
+    return poemArtifacts;
   },
 };
 

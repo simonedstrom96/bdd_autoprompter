@@ -20,7 +20,8 @@
   "license": "MIT",
   "dependencies": {
     "@langchain/core": "^0.3.40",
-    "@langchain/openai": "^0.4.4"
+    "@langchain/openai": "^0.4.4",
+    "uuid": "^11.0.5"
   },
   "devDependencies": {
     "ts-node": "^10.9.2",

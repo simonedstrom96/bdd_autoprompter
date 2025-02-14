@@ -1,12 +1,24 @@
-import { parseBddSpecs, BDDScenario, BDDSpecification } from "./parseBddSpecs";
-import { BaseMessage } from "@langchain/core/messages";
+import {
+  parseBddSpecs,
+  BDDScenario,
+  BDDSpecification,
+  BDDFeature,
+} from "./parseBddSpecs";
+import {
+  AIMessage,
+  BaseMessage,
+  HumanMessage,
+  SystemMessage,
+} from "@langchain/core/messages";
+import { v4 as uuidv4 } from "uuid";
+import { LLMService } from "./llmService";
 
-export type Persona = {
+export interface Persona {
   positive: boolean; // if the persona is a positive or a negative persona. A positive persona uses the system as intended and belongs to some group. A negative persona is attempting to misuse the system as its primary purpose.
   description: string;
-};
+}
 
-export type LLMConversation = {
+export interface LLMConversation {
   name: string;
   description: string; // The conversation description should detail what the purpose of the conversation is
   likelyPersonas: Persona[];
@@ -14,16 +26,28 @@ export type LLMConversation = {
     conversationId: string,
     userInputContent: string
   ) => Promise<string>; // should return an ai response upon receiving a userInput for a given conversationId
-  result?: BaseMessage[]; // Filled in once a conversation is completed
-};
+}
 
-export type LLMArtifact = {
+export interface LLMConversationResult {
+  conversationId: string;
+  bddFeature: BDDFeature;
+  result: BaseMessage[];
+  promptsEncountered: PromptParams[];
+}
+
+export interface LLMArtifact {
   name: string;
   description: string;
-  getArtifact: () => Promise<string>;
+  getArtifact: (input: any) => Promise<string>;
   variability?: number; // number 0-1 how variable the artifact generation is, corresponds to temperature for a single llm call. Defaults to 0, ie deterministic generation
-  result?: string; // Filled in once an artifact is fetched
-};
+}
+
+export interface LLMArtifactResult {
+  artifactId: string;
+  bddFeature: BDDFeature;
+  result: string;
+  promptsEncountered: PromptParams[];
+}
 
 export interface LangfuseConfig {
   publicKey: string;
@@ -36,6 +60,7 @@ export interface AdditionalBddAutoPrompterConfig {
   conversationsPerPersona?: number;
   maxArtifactsAfterDimensionalityReduction?: number;
   artifactVariabilityGeneration?: number; // for a variability of 1, how many artifacts should be generated? Ie if an artifact has variability 0.5 and this number is set to 10 then 5 artifacts will be generated
+  userMessagesPerSimulatedConversation?: number;
 }
 
 export interface BDDAutoPrompterParams {
@@ -54,11 +79,11 @@ export interface PromptParams {
   description?: string;
 }
 
-export type AutoPromptValidationReport = {
+export interface AutoPromptValidationReport {
   promptsEncountered: PromptParams[];
   validatedScenarios: BDDScenario[];
   report: string;
-};
+}
 /**
  * Wrapper function to retrieve the contents of a given prompt.
  *
@@ -75,8 +100,15 @@ export function bddapGetPrompt(input: PromptParams): string {
 export interface ApplicationInteractionFlowProps {
   autoPrompterParams: BDDAutoPrompterParams;
   setup?: () => {};
-  main: (autoPrompterParams: BDDAutoPrompterParams) => Promise<BDDAutoPrompter>;
-  teardown?: () => {};
+  main: (
+    autoPrompterParams: BDDAutoPrompterParams
+  ) => Promise<(LLMConversationResult | LLMArtifactResult)[]>;
+  teardown?: (
+    generatedArtifactsAndConversations: (
+      | LLMConversationResult
+      | LLMArtifactResult
+    )[]
+  ) => void;
 }
 
 export class BDDAutoPrompter {
@@ -91,7 +123,9 @@ export class BDDAutoPrompter {
   private conversationsPerPersona: number = 5;
   private maxArtifactsAfterDimensionalityReduction: number = 5;
   private artifactVariabilityGeneration: number = 10;
+  private userMessagesPerSimulatedConversation: number = 5;
   private bddSpecifications: BDDSpecification[] = [];
+  private llmService: LLMService;
 
   constructor(props: BDDAutoPrompterParams) {
     this.applicationOverview = props.applicationOverview;
@@ -105,6 +139,7 @@ export class BDDAutoPrompter {
       conversationsPerPersona,
       maxArtifactsAfterDimensionalityReduction,
       artifactVariabilityGeneration,
+      userMessagesPerSimulatedConversation,
     } = props.additionalBddAutoPrompterConfig || {};
     this.conversationsPerPersona =
       conversationsPerPersona ?? this.conversationsPerPersona;
@@ -113,6 +148,11 @@ export class BDDAutoPrompter {
       this.maxArtifactsAfterDimensionalityReduction;
     this.artifactVariabilityGeneration =
       artifactVariabilityGeneration ?? this.artifactVariabilityGeneration;
+    this.userMessagesPerSimulatedConversation =
+      userMessagesPerSimulatedConversation ??
+      this.userMessagesPerSimulatedConversation;
+
+    this.llmService = new LLMService({ temperature: 0 }); // llm service used to send llm requests for the autoprompter itself
   }
 
   public static async initialise(
@@ -125,26 +165,94 @@ export class BDDAutoPrompter {
     return bddAutoPrompter;
   }
 
-  public async simulateConversation(conversation: LLMConversation) {}
+  public async simulateConversations(
+    llmConversation: LLMConversation
+  ): Promise<LLMConversationResult[]> {
+    // async local storage thing to keep track of prompts encountered
+    const personas = llmConversation.likelyPersonas; // can be improved upon later by having bddap generate the personas based on the bdd spec, for now the personas are given manually
+    const conversationResults: LLMConversationResult[] = [];
+    const bddFeature: BDDFeature | undefined = this.bddSpecifications
+      .flatMap((spec) => spec.features)
+      .find(
+        (feature) =>
+          feature.name === llmConversation.name &&
+          feature.featureCategory === "LLM Conversation"
+      );
 
-  public async fetchArtifactContent(artifact: LLMArtifact) {
-    // store artifact content before passing it on, to be used in report
-    if (!this.artifacts) {
-      this.artifacts = [];
+    if (!bddFeature) {
+      throw new Error(
+        `Feature with name ${llmConversation.name} not found in any specification.`
+      );
     }
-    const existingArtifact = this.artifacts.find(
-      (a) => a.name === artifact.name
-    );
-    const artifactContent = await artifact.getArtifact();
-    const artifactWithResult = { ...artifact, result: artifactContent };
 
-    if (!existingArtifact) {
-      this.artifacts.push(artifactWithResult);
+    for (const persona of personas) {
+      for (let i = 0; i < this.conversationsPerPersona; i++) {
+        const conversationId = uuidv4();
+        const messages: BaseMessage[] = [];
+        for (let j = 0; i < this.userMessagesPerSimulatedConversation; j++) {
+          const userMessageGenerationPromptContent = `Below is a list of messages in a conversation between an AI and a User. You are to generate the next HumanMessage content in this conversation by simulating the response of the following persona: ${
+            persona.description
+          }. This persona has ${
+            persona.positive ? "positive" : "negative"
+          } intentions when conducting this conversation and your message should reflect this. Respond only with the simulated message content and NO OTHER TEXT.`;
+          const simulatedUserMessageContent = await this.llmService.invoke([
+            new SystemMessage(userMessageGenerationPromptContent),
+            ...messages,
+          ]);
+          const aiResponse = await llmConversation.sendMessage(
+            conversationId,
+            simulatedUserMessageContent
+          ); // note: this is one way of setting up a sendMessage function. The other way is to send in a list of all previous messages. BDDAP is chosen here to be opinionated on this logic because the logic of sending an receiving a message may be very complex under the hood but the function should only care about the interface
+          messages.push(
+            new HumanMessage(simulatedUserMessageContent),
+            new AIMessage(aiResponse)
+          );
+        }
+        conversationResults.push({
+          conversationId,
+          bddFeature,
+          result: messages,
+          promptsEncountered: [], // todo: implement asyncLocalStorage to find the prompts that were encountered during the conversation flow
+        });
+      }
     }
-    return artifactContent;
+    return conversationResults;
   }
 
-  // public async artifactMaxPooling(artifacts: Artifact[]): Artifact[] {}
+  public async generateArtifacts(
+    artifact: LLMArtifact,
+    artifactInputs: any[] // eg a list of conversation ids
+  ): Promise<LLMArtifactResult[]> {
+    const bddFeature: BDDFeature | undefined = this.bddSpecifications
+      .flatMap((spec) => spec.features)
+      .find(
+        (feature) =>
+          feature.name === artifact.name &&
+          feature.featureCategory === "LLM Artifact"
+      );
+
+    if (!bddFeature) {
+      throw new Error(
+        `Feature with name ${artifact.name} not found in any specification.`
+      );
+    }
+
+    const artifactResults: LLMArtifactResult[] = [];
+    for (const input of artifactInputs) {
+      const artifactContent = await artifact.getArtifact(input);
+      artifactResults.push({
+        artifactId: uuidv4(), //todo: should not generate a new id, instead it should be able to follow from previous flows. Maybe implement something like a trace id? Requires more design thinking
+        bddFeature,
+        result: artifactContent,
+        promptsEncountered: [], // todo: implement asyncLocalStorage to find the prompts that were encountered during the conversation flow
+      });
+    }
+    return artifactResults;
+  }
+
+  // public async artifactMaxPooling(artifacts: LLMArtifactResults[]): LLMArtifactResults[] {}
+
+  // public async conversationMaxPooling(conversations: LLMConversationResult[]): LLMConversationResult[] {}
 
   // private async generatePersonas(conversation: Conversation) {}
 
@@ -156,27 +264,9 @@ export class BDDAutoPrompter {
   //   report: AutoPromptValidationReport
   // ): Promise<PromptParams> {}
 
-  private async autoPromptingLoop() {}
+  // private async autoPromptingLoop() {}
 
-  private async updateApplicationLangfusePrompts(
-    promptsToUpdate: PromptParams[]
-  ) {}
-}
-
-export async function applicationInteractionFlows(
-  flows: ApplicationInteractionFlowProps[]
-) {
-  for (const flow of flows) {
-    if (flow.setup) {
-      await flow.setup();
-    }
-    const autoPrompterWithResults = await flow.main(flow.autoPrompterParams);
-    const artifactsWithResults = autoPrompterWithResults.artifacts;
-    const conversationsWithResults = autoPrompterWithResults.conversations;
-    // evaluate artifacts and conversations according to bdd scenarios
-
-    if (flow.teardown) {
-      await flow.teardown();
-    }
-  }
+  // private async updateApplicationLangfusePrompts(
+  //   promptsToUpdate: PromptParams[]
+  // ) {}
 }

@@ -53,8 +53,8 @@ export async function generatePoemHandler(
     description:
       "This prompt should take the users conversation and transform it into one coherent poem that is nice and happy",
   });
-  const systemMessage = new SystemMessage(poemGenerationInstructionContent);
-  const messagesForLLM = [systemMessage, ...conversation];
+  const instructionPrompt = new SystemMessage(poemGenerationInstructionContent);
+  const messagesForLLM = [instructionPrompt, ...conversation];
 
   const poem = await llmService.invoke(messagesForLLM);
   return poem;
