@@ -1,0 +1,11 @@
+{
+  "name": "conversation-poetry-app",
+  "version": "1.0.0",
+  "description": "A slightly more advanced LLM poetry generation app to exemplify the use of BDD AutoPrompter",
+  "main": "index.js",
+  "scripts": {
+    "dev": "concurrently \"npm run start:backend\" \"npm run start:frontend\"",
+    "start:backend": "npx ts-node src/server/index.ts",
+    "start:frontend": "live-server src/app --port=3000 --no-browser"
+  }
+}
