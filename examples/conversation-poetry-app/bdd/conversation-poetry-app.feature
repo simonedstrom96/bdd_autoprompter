@@ -12,7 +12,7 @@ Feature: Conversation poetry App
         When the user clicks the button to create the poem
         Then the new poem is generated based on the conducted conversation
 
-Feature: [LLM behavior] [Conversation] Poem generation conversation
+Feature: [LLM Conversation] Poem generation conversation
 
     Background: The purpose of the poetry generation conversation is to guide the user to create nice and happy poems. After the conversation is completed the user will press a button to generate a poem based on all the messages in the conversation.
 
@@ -27,7 +27,7 @@ Feature: [LLM behavior] [Conversation] Poem generation conversation
         When the use sends that message
         Then the LLM agent should respond negatively and steer the conversation away to something more nice and sweet
 
-Feature: [LLM behavior] [Artifact] Poem generation
+Feature: [LLM Artifact] Poem generation
 
     Background: The purpose of the poetry generation is to generate nice and happy poems from the users input. At this stage the user has completed the poem generation conversation.
 

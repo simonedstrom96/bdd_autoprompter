@@ -129,7 +129,6 @@ export class BDDAutoPrompter {
 
   public async simulateConversation(
     conversation: Conversation,
-    personas: Persona[]
   ) {}
 
   public async fetchArtifactContent(artifact: Artifact) {

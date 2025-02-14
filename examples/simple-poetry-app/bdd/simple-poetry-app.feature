@@ -7,7 +7,7 @@ Feature: Simple poetry App
         When The user presses the "Generate Poem" button
         Then a new poem should be displayed on the screen
 
-Feature: [LLM behavior] [Artifact] Poem generation
+Feature: [LLM Artifact] Poem generation
 
     Background: The purpose of the poetry application is to generate nice, happy and short poems for all users who click the "Generate poem" button.
 
