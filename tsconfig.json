@@ -6,7 +6,7 @@
     "strict": true,
     "esModuleInterop": true,
     "noErrorTruncation": true,
-    "declaration": true,
+    "declaration": true
   },
   
   "include": [

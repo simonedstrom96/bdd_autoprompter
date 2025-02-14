@@ -1,25 +1,23 @@
-import * as fs from "fs";
-import * as readline from "readline";
 import { parseBddSpecs, BDDScenario, BDDSpecification } from "./parseBddSpecs";
-import { BaseMessage, HumanMessage } from "@langchain/core/messages";
+import { BaseMessage } from "@langchain/core/messages";
 
 export type Persona = {
   positive: boolean; // if the persona is a positive or a negative persona. A positive persona uses the system as intended and belongs to some group. A negative persona is attempting to misuse the system as its primary purpose.
   description: string;
 };
 
-export type Conversation = {
+export type LLMConversation = {
   name: string;
   description: string; // The conversation description should detail what the purpose of the conversation is
   likelyPersonas: Persona[];
   sendMessage: (
     conversationId: string,
-    userInput: HumanMessage
+    userInputContent: string
   ) => Promise<string>; // should return an ai response upon receiving a userInput for a given conversationId
   result?: BaseMessage[]; // Filled in once a conversation is completed
 };
 
-export type Artifact = {
+export type LLMArtifact = {
   name: string;
   description: string;
   getArtifact: () => Promise<string>;
@@ -85,8 +83,8 @@ export class BDDAutoPrompter {
   private applicationOverview: string;
   private relevantBddFilePaths: string[] | string;
   private envFilePath: string;
-  public conversations?: Conversation[];
-  public artifacts?: Artifact[];
+  public conversations?: LLMConversation[];
+  public artifacts?: LLMArtifact[];
   private keyTermsAndDefinitions?: { term: string; definition: string }[];
   private applicationLangfuseConfig?: LangfuseConfig;
   private autoPrompterLangfuseConfig?: LangfuseConfig;
@@ -127,11 +125,9 @@ export class BDDAutoPrompter {
     return bddAutoPrompter;
   }
 
-  public async simulateConversation(
-    conversation: Conversation,
-  ) {}
+  public async simulateConversation(conversation: LLMConversation) {}
 
-  public async fetchArtifactContent(artifact: Artifact) {
+  public async fetchArtifactContent(artifact: LLMArtifact) {
     // store artifact content before passing it on, to be used in report
     if (!this.artifacts) {
       this.artifacts = [];
@@ -178,7 +174,7 @@ export async function applicationInteractionFlows(
     const artifactsWithResults = autoPrompterWithResults.artifacts;
     const conversationsWithResults = autoPrompterWithResults.conversations;
     // evaluate artifacts and conversations according to bdd scenarios
-    
+
     if (flow.teardown) {
       await flow.teardown();
     }

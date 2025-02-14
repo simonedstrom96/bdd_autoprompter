@@ -10,7 +10,9 @@
     "preinstall": "cd ../ && npm run build",
     "build": "tsc -b examples/*",
     "start:app1": "cd ./simple-poetry-app && npm run dev",
-    "start:app2": "cd ./conversation-poetry-app && npm run dev"
+    "bddap:app1": "cd ./simple-poetry-app && npm run bddap",
+    "start:app2": "cd ./conversation-poetry-app && npm run dev",
+    "bddap:app2": "cd ./conversation-poetry-app && npm run bddap"
   },
   "dependencies": {
     "@langchain/core": "^0.3.40",
