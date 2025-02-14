@@ -13,7 +13,7 @@ app.use(cors());
 
 const llmService = new LLMService({ temperature: 1 });
 
-async function handleGeneratePoem(): Promise<string> {
+export async function handleGeneratePoem(): Promise<string> {
   const initialPromptContent = "Generate a poem, no other text";
   const bddapPromptFields = {
     content: initialPromptContent,
