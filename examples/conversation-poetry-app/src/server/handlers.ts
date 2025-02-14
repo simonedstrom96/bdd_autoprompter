@@ -7,12 +7,18 @@ import {
 import { LLMService } from "../../../shared/server/llmService";
 import { bddapGetPrompt } from "bdd-autoprompter";
 
-let conversation: BaseMessage[] = [];
+const conversations: Record<string, BaseMessage[]> = {};
 const llmService = new LLMService({ temperature: 1 });
 
 export async function sendMessageHandler(
+  conversationId: string,
   userMessageContent: string
 ): Promise<string> {
+  if (!conversations[conversationId]) {
+    conversations[conversationId] = [];
+  }
+  const conversation = conversations[conversationId];
+
   const userMessage = new HumanMessage(userMessageContent);
   conversation.push(userMessage);
 
@@ -32,7 +38,14 @@ export async function sendMessageHandler(
   return assistantResponseContent;
 }
 
-export async function generatePoemHandler(): Promise<string> {
+export async function generatePoemHandler(
+  conversationId: string
+): Promise<string> {
+  if (!conversations[conversationId]) {
+    conversations[conversationId] = [];
+  }
+  const conversation = conversations[conversationId];
+
   const poemGenerationInstructionContent = bddapGetPrompt({
     content:
       "Generate a poem based on the following conversation, no other text",
@@ -47,7 +60,17 @@ export async function generatePoemHandler(): Promise<string> {
   return poem;
 }
 
-export function resetConversationHandler(): string {
-  conversation = [];
+export function resetConversationHandler(conversationId: string): string {
+  conversations[conversationId] = [];
   return "Conversation reset.";
+}
+
+export async function deleteConversationHandler(
+  conversationId: string
+): Promise<void> {
+  if (conversations[conversationId]) {
+    delete conversations[conversationId];
+  } else {
+    throw new Error("Conversation not found.");
+  }
 }

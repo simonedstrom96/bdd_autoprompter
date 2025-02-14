@@ -1,3 +1,10 @@
+// Generate a unique conversation ID for this session
+function generateConversationId() {
+  return "_" + Math.random().toString(36).substr(2, 9);
+}
+
+const conversationId = generateConversationId();
+
 document.getElementById("sendMessage")?.addEventListener("click", sendMessage);
 
 document.getElementById("messageInput")?.addEventListener("keydown", (event) => {
@@ -20,12 +27,12 @@ async function sendMessage() {
   // Clear input
   messageInput.value = "";
 
-  // Send message to backend
+  // Send message to backend with conversationId
   try {
     const response = await fetch("http://localhost:8080/send-message", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: userMessage }),
+      body: JSON.stringify({ conversationId, message: userMessage }),
     });
     if (response.ok) {
       const data = await response.json();
@@ -52,6 +59,7 @@ document.getElementById("generatePoem")?.addEventListener("click", async () => {
     const response = await fetch("http://localhost:8080/generate-poem", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ conversationId }),
     });
     if (response.ok) {
       const data = await response.json();
@@ -71,6 +79,7 @@ document.getElementById("resetConversation")?.addEventListener("click", async ()
     const response = await fetch("http://localhost:8080/reset-conversation", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ conversationId }),
     });
     if (response.ok) {
       conversationDiv.innerHTML = "";
